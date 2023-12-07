@@ -1,62 +1,110 @@
-"use strict";
+"use scrict";
 
-// Что необходимо реализовать (первые 2 пункта делаем по видео):
-// Отмечать выполненные дела, выполненные дела должны перемещаться в блок с выполненными делами
-// Поле ввода после добавления дела должно очищаться
-// Пустые дела добавляться не должны
-// Удаление дел на кнопку КОРЗИНА
-// Сохранять данные о делах в localStorage (советую в виде массива)
-// Дела из localStorage подгружаться должны автоматически при загрузки странице
-// внимание чтобы сохранить массив в localStorage необходимо его конвертировать в json формат (JSON.stringify)
-// внимание из localStorage мы всегда получаем json строку и её необходимо конвертировать обратно в формат javascript (JSON.parse)
-//  Проверить, чтобы все работало и не было ошибок в консоли (Учесть вариант отсутствия объекта в localstorage пользователя при первой загрузке страницы)
-//  Сохранить проект в отдельном репозитории на GitHub
-
+let toDoData = [];
 const todoControl = document.querySelector(".todo-control");
 const headerInput = document.querySelector(".header-input");
 const todolist = document.querySelector(".todo-list");
 const todocompleted = document.querySelector(".todo-completed");
 
-const toDoData = [];
-
-const render = () => {
+const clearElements = () => {
+  headerInput.value = "";
   todolist.innerHTML = "";
   todocompleted.innerHTML = "";
+};
 
+const deleteItemToDo = (e) => {
+  clearElements();
+  const li = e.target.closest("li");
+  const text = li.querySelector(".text-todo").innerText;
+  const newtoDoData = [];
   toDoData.forEach((item) => {
-    debugger;
+    if (item.text !== text) {
+      newtoDoData.push(item);
+    }
+  });
+  toDoData = newtoDoData;
+  creatListTask(toDoData);
+};
+
+const deleteEvent = (li) => {
+  const deleteButton = li.querySelector(".todo-remove");
+  deleteButton.addEventListener("click", deleteItemToDo);
+};
+
+const creatComplite = (li, item) => {
+  const buttonComplite = li.querySelector(".todo-complete");
+  buttonComplite.addEventListener("click", () => {
+    item.completed = !item.completed;
+    creatListTask(toDoData);
+  });
+};
+
+const loadListTasks = (li, item) => {
+  if (item.completed) {
+    todocompleted.append(li);
+  } else {
+    todolist.append(li);
+  }
+  creatComplite(li, item);
+  deleteEvent(li);
+};
+
+const creatListTask = (toDoData) => {
+  clearElements();
+  toDoData.forEach((item) => {
     const li = document.createElement("li");
     li.classList.add("todo-item");
     li.innerHTML = `
-      <span class="text-todo"> ${item.text} </span> 
+      <span class="text-todo">${item.text}</span> 
       <div class="todo-buttons">
         <button class="todo-remove"></button>
         <button class="todo-complete"></button>
       </div>`;
-
-    if (item.completed) {
-      todocompleted.append(li);
-    } else {
-      todolist.append(li);
-    }
-
-    li.querySelector(".todo-complete").addEventListener("click", () => {
-      item.completed = !item.completed;
-      render();
-    });
+    loadListTasks(li, item);
   });
+  localStorage.setItem("tasks", JSON.stringify(toDoData));
 };
 
-todoControl.addEventListener("submit", (event) => {
-  event.preventDefault();
-
+const addNewToDo = (input) => {
   const newToDo = {
-    text: headerInput.value,
+    text: input,
     completed: false,
   };
+  return newToDo;
+};
 
+const addEventTask = (input) => {
+  const newToDo = addNewToDo(input);
   toDoData.push(newToDo);
-  headerInput.value = "";
+  localStorage.setItem("tasks", JSON.stringify(toDoData));
+  creatListTask(toDoData);
+};
 
-  render();
-});
+const eventSubmit = (e) => {
+  e.preventDefault();
+  const input = headerInput.value;
+  if (input !== "") {
+    addEventTask(input);
+  } else {
+    alert("Добавьте текст задачи");
+  }
+};
+
+const addEventSubmit = () => {
+  todoControl.addEventListener("submit", eventSubmit);
+};
+
+const loadDataTasks = () => {
+  const data = localStorage.getItem("tasks") ? JSON.parse(localStorage.getItem("tasks")) : [];
+  if (data.length) {
+    toDoData = data;
+    creatListTask(toDoData);
+  }
+};
+
+const init = () => {
+  loadDataTasks();
+  addEventSubmit();
+};
+
+init();
